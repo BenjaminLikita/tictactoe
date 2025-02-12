@@ -1,5 +1,3 @@
-# React + TypeScript + Vite
+# Benji Codes ()
 
-# Benji Codes
-
-TicTacToe Game
+TicTacToe Game [React + TypeScript + Vite]
