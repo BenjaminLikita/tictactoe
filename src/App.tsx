@@ -151,7 +151,7 @@ const Board = ({gameMode, returnToMenu}: {gameMode: IGameMode, returnToMenu: () 
   };
 
   const getBestMove = (squares: IBoardValue[]) => {
-    const { index } = minimax(squares, 0, false); // Start with maximizing for CPU
+    const { index } = minimax(squares, 0, true); // Start with maximizing for CPU
     return index;
   };
 
