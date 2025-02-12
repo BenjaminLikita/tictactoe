@@ -27,8 +27,6 @@ const App = () => {
             <div className='flex flex-col gap-5'>
               <motion.button onClick={() => { setGameMode("cpu"); setIsWelcome(false) }} whileHover={{ scale: 1.05, rotate: '2deg' }} className='rounded-full py-3 px-8 text-[#57fed0] font-medium text-lg bg-gray-800 cursor-pointer'>Vs CPU</motion.button>
               <motion.button onClick={() => { setGameMode("human"); setIsWelcome(false) }} whileHover={{ scale: 1.05, rotate: '-2deg' }} className='rounded-full py-3 px-8 bg-[#57fed0] font-medium text-lg text-black cursor-pointer'>Vs Friend</motion.button>
-              {/* <button onClick={() => { setGameMode("human"); setIsWelcome(false) }} className='rounded-full py-3 px-8 text-[#57fed0] font-medium text-lg bg-gray-800 cursor-pointer'>Human</button>
-              <button onClick={() => { setGameMode("cpu"); setIsWelcome(false) }} className='rounded-full py-3 px-8 text-[#57fed0] font-medium text-lg bg-gray-800 cursor-pointer'>CPU</button> */}
             </div>
           </>
         ) : (
@@ -51,7 +49,12 @@ type IBoardValue = "X" | "O"
 const Board = ({gameMode, returnToMenu}: {gameMode: IGameMode, returnToMenu: () => void}) => {
   const [boardValue, setBoardValue] = useState<IBoardValue[]>(Array(9).fill(null))
   const [playerTurn, setPlayerTurn] = useState<IBoardValue>("X")
-  const [winner, setWinner] = useState<IBoardValue | null>(null)
+  const [winner, setWinner] = useState<IBoardValue | 'draw' | null>(null)
+  const [score, setScore] = useState({
+    x: 0,
+    o: 0,
+    draw: 0
+  })
   // const [gameOver, setGameOver] = useState<boolean>(false)
 
   const calculateWinner = (squares: (IBoardValue | null)[]) => {
@@ -67,11 +70,14 @@ const Board = ({gameMode, returnToMenu}: {gameMode: IGameMode, returnToMenu: () 
     ];
     for (let i = 0; i < lines.length; i++) {
       const [a, b, c] = lines[i];
-
+      
       if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
         return squares[a]
       }
     }
+    
+    const isDraw = !squares.some(square => square === null)
+    if(isDraw) return "draw"
     return null;
   };
 
@@ -82,6 +88,11 @@ const Board = ({gameMode, returnToMenu}: {gameMode: IGameMode, returnToMenu: () 
       setBoardValue(newBoard)
       const winner = calculateWinner(newBoard)
       if (winner){
+        if(winner === "X") setScore(prev => ({ ...prev, x: prev.x + 1 }))
+        if(winner === "O") setScore(prev => ({ ...prev, o: prev.o + 1 }))
+        if(winner === "draw") setScore(prev => ({ ...prev, draw: prev.draw + 1 }))
+        // else if(winner === "O") setScore({ ...score, y: score.y + 1 })
+        // else if(winner === "draw") setScore({ ...score, draw: score.draw + 1 })
         setWinner(winner)
       } else{
         if(gameMode === "human") playerTurn === "X" ? setPlayerTurn("O") : setPlayerTurn("X")     
@@ -153,6 +164,9 @@ const Board = ({gameMode, returnToMenu}: {gameMode: IGameMode, returnToMenu: () 
       // setXIsNext(true); // Switch back to human's turn
       setPlayerTurn("X")
       const winner = calculateWinner(newSquares);
+      if(winner === "X") setScore(prev => ({ ...prev, x: prev.x + 1 }))
+      if(winner === "O") setScore(prev => ({ ...prev, o: prev.o + 1 }))
+      if(winner === "draw") setScore(prev => ({ ...prev, draw: prev.draw + 1 }))
       winner && setWinner(winner);
     }
   };
@@ -183,8 +197,29 @@ const Board = ({gameMode, returnToMenu}: {gameMode: IGameMode, returnToMenu: () 
           boardValue.map((value, index) => <Square key={index} value={value} onClick={() => handleClick(index)} />)
         }
       </motion.div>
-      <p className='font-semibold text-xl flex items-center gap-2'>Player <span className='flex items-center'><img className='w-[20px] h-[20px]' src={playerTurn === "X" ? crossImg : circleImg} />'s</span> Turn</p>
-      {/* <p className='font-semibold text-xl'>Player <span style={{ color: playerTurn === "X" ? "oklch(0.852 0.199 91.936)" : playerTurn === "O" ? '#57fed0' : '' }}>{playerTurn}</span>'s Turn</p> */}
+      <div className='flex items-center justify-between w-[340px]'>
+        <div className='flex gap-2'>
+          <span className='flex items-center justify-center gap-1'>
+            <img className='w-[15px] h-[15px]' src={crossImg} alt='player' />:
+          </span>
+          <span className='text-xl'>{score.x}</span>
+        </div>
+        <div className='flex gap-2'>
+          <span className='flex items-center justify-center gap-1'>
+            <img className='w-[15px] h-[15px]' src={circleImg} alt='player' />:
+          </span>
+          <span className='text-xl'>{score.o}</span>
+        </div>
+        <div className='flex gap-2'>
+          <span className='flex items-center justify-center gap-1'>
+            Draw:
+          </span>
+          <span className='text-xl'>{score.draw}</span>
+        </div>
+      </div>
+      <p className='font-semibold text-xl flex items-center gap-2'>Player <span className='flex items-center'><img className='w-[20px] h-[20px]' src={playerTurn === "X" ? crossImg : circleImg} alt='player' />'s</span> Turn</p>
+
+
       <button className='rounded-full py-3 px-8 text-[#57fed0] font-medium text-lg bg-gray-800 cursor-pointer' onClick={resetBoard}>Reset</button>
       <motion.button whileHover={{ scale: 1.08, rotate: '-2deg' }} className='rounded-full py-3 px-8 bg-[#57fed0] font-medium text-lg text-black cursor-pointer' onClick={returnToMenu}>Return to Menu</motion.button>
       { 
@@ -218,14 +253,20 @@ const Square = ({ value, onClick }: { value: IBoardValue, onClick: () => void })
 
 
 
-const WinnerModal = ({ winner, reset }: { winner: IBoardValue | null, reset: () => void }) => {
+const WinnerModal = ({ winner, reset }: { winner: IBoardValue | 'draw' | null, reset: () => void }) => {
   return (
     <AnimatePresence>
       {
         winner && (
           <motion.div className='fixed top-0 left-0 w-full h-full bg-gray-900/80 flex items-center justify-center' initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
             <motion.div className='bg-gray-800 text-white w-[80%] lg:w-[40%] flex flex-col items-center justify-center gap-10 p-10 rounded-lg' initial={{ y: -100 }} animate={{ y: 0 }} exit={{ y: -100 }}>
-              <h1 className='text-2xl md:text-4xl font-bold flex gap-3'>Player <span className='flex items-center'><img className='w-[30px] h-[30px]' src={winner === "X" ? crossImg : circleImg} /></span> Won</h1>
+              {
+                winner === 'draw' ? (
+                  <h1 className='text-2xl md:text-4xl font-bold flex gap-3'>It's a draw</h1>
+                ) : (
+                  <h1 className='text-2xl md:text-4xl font-bold flex gap-3'>Player <span className='flex items-center'><img className='w-[30px] h-[30px]' src={winner === "X" ? crossImg : circleImg} /></span> Won</h1>
+                )
+              }
               <button className='rounded-full py-3 px-8 text-[#57fed0] font-medium text-base md:text-lg bg-gray-800 cursor-pointer' onClick={reset}>Play Again</button>
             </motion.div>
           </motion.div>
